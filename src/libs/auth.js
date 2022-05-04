@@ -9,16 +9,21 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
         axios
             .get('/user/me',{headers:{'x-auth-token': localStorage.getItem("token")}})
             .then(res => res.data)
-            .catch(error => {})
+            .then()
+            .catch(error => {
+                if(middleware === 'auth'){
+                    router.push('/login')
+                }
+            })
     )
 
-    const logout = async () => {
+    const logout = () => {
         axios
         .get('/auth/logout',{headers:{'x-auth-token': localStorage.getItem("token")}})
         .then(res => {
             if (res.data.loggedout === true){
                 localStorage.removeItem("token")
-                router.push('/')
+                router.push('/login')
             }
         })
         .catch(error => {
@@ -28,7 +33,6 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
 
     useEffect(() => {
         if (middleware === 'guest' && redirectIfAuthenticated && user) router.push(redirectIfAuthenticated)
-        if (middleware === 'auth' && error) logout()
     }, [user, error])
 
     return {

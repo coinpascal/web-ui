@@ -8,10 +8,13 @@ import Link from "next/link";
 import { CgPassword } from "react-icons/cg";
 
 function CreateAccountForm() {
-  const [currentStep, setCurrentStep] = useState('VerifyMail')
-  let [registrationError, setregistrationError] = useState('')
-  let [registrationErrorDialogisOpen, setregistrationErrorDialogIsOpen] = useState(false)
+  const [registrationError, setregistrationError] = useState('')
+  const [registrationErrorDialogisOpen, setregistrationErrorDialogIsOpen] = useState(false)
   const [userEmail, setUserEmail] = useState('')
+  const [userEmailError, setUserEmailError] = useState(null)
+  const [userOTP, setUserOTP] = useState('')
+  const [userOTPError, setUserOTPError] = useState(null)
+
     return(
       <>
         <div className="p-10 relative">
