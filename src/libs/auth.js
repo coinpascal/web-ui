@@ -9,14 +9,17 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
         axios
             .get('/user/me',{headers:{'x-auth-token': localStorage.getItem("token")}})
             .then(res => res.data)
-            .then()
             .catch(error => {
                 if(middleware === 'auth'){
                     router.push('/login')
                 }
             })
     )
-
+    const afterLogin = ({token}) =>{
+        if(token != undefined){
+            localStorage.setItem('token',token)
+        }  
+    }
     const logout = () => {
         axios
         .get('/auth/logout',{headers:{'x-auth-token': localStorage.getItem("token")}})

@@ -14,135 +14,169 @@ function CreateAccountForm() {
   const [userEmailError, setUserEmailError] = useState(null)
   const [userOTP, setUserOTP] = useState('')
   const [userOTPError, setUserOTPError] = useState(null)
+  const [OTPsent, setOTPsent] = useState(false)
 
+  const sendOTP = async () =>{
+    if (userEmail === null || !String(userEmail).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/))
+        {
+          setUserEmailError('Invalid Email')
+          return
+        }
+    var config = {
+        method: 'post',
+        url: '/user/register/VerifyMail',
+        headers: { 
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        data :JSON.stringify({
+            "email": userEmail,
+          })
+      };
+    axios(config)
+        .then(res  => {
+            if(res.data.sentOTP === true){
+              setOTPsent(true)
+            }
+            if(res.data.e){
+              setregistrationErrorDialogIsOpen(true)
+                switch (res.data.e) {
+                    case "email_already_exist":
+                      setregistrationError('This email is already exists, try different email.')
+                        break
+                    case "EmailNotOK":
+                      setregistrationError('Invalid Email Format, Re-enter your email.')
+                        break;
+                    case "something_went_wrong":
+                          setregistrationError('Invalid Email Format, Re-enter your email.')
+                          // window.location.reload();
+                          break;
+                    case "sentOTPAlready":
+                      setOTPsent(true)
+                      setregistrationError('OTP already sent, and is valid yet. Retry for new OTP in few minutes. Meanwhile do check your spam folder for it.')
+                        break;
+                    default:
+                      setregistrationError('Unknow error, Please refresh the page and retry.')
+                        break;
+                }
+            }
+            if(process.env.NEXT_PUBLIC_APPLICATION_STATUS === 'development'){
+                console.log(res.data);
+            }
+        })
+        .catch(error => {
+            if (error) {
+              setregistrationErrorDialogIsOpen(true)
+              setregistrationError('Server side issue, reload page and then retry.')
+                if(process.env.NEXT_PUBLIC_APPLICATION_STATUS === 'development'){
+                    console.log(error.response);
+                }
+            }
+        })
+}
+const verifyOTP = async () =>{
+  if (userEmail === null || !String(userEmail).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/))
+      {
+        setUserEmailError('Invalid Email')
+        return
+      }
+  if (userOTP === null)
+      {
+        setUserOTPError('Required')
+        return
+      }
+  var config = {
+      method: 'post',
+      url: '/user/register/verify2FaCode',
+      headers: { 
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      data :JSON.stringify({
+        "email": userEmail,
+        "secret": userOTP,
+      })
+    };
+  axios(config)
+      .then(res  => {
+          if(res.data.user === userEmail){
+            alert('UserCreated')
+          }
+          if(res.data.e){
+            setregistrationErrorDialogIsOpen(true)
+              switch (res.data.e) {
+                  case "email_already_exist":
+                    setregistrationError('This email is already exists, try different email.')
+                      break
+                  case "EmailNotOK":
+                    setregistrationError('Invalid Email Format, Re-enter your email.')
+                      break;
+                  case "codeIncorrect":
+                    setUserOTPError("Code In-valid")
+                    setUserOTP('')
+                    setOTPsent(true)
+                    break;
+                  case "something_went_wrong":
+                        setregistrationError('Invalid Email Format, Re-enter your email.')
+                        // window.location.reload();
+                        break;
+                  case "sentOTPAlready":
+                    setOTPsent(true)
+                    setregistrationError('OTP already sent, and is valid yet. Retry for new OTP in few minutes. Meanwhile do check your spam folder for it.')
+                      break;
+                  default:
+                    setregistrationError('Unknow error, Please refresh the page and retry.')
+                      break;
+              }
+          }
+          if(process.env.NEXT_PUBLIC_APPLICATION_STATUS === 'development'){
+              console.log(res.data);
+          }
+      })
+      .catch(error => {
+          if (error) {
+            setregistrationErrorDialogIsOpen(true)
+            setregistrationError('Server side issue, reload page and then retry.')
+              if(process.env.NEXT_PUBLIC_APPLICATION_STATUS === 'development'){
+                  console.log(error.response);
+              }
+          }
+      })
+}
     return(
       <>
         <div className="p-10 relative">
           <div className='text-2xl font-bold mb-2 text-left'><span className='font-normal text-gray-500'>Create Account</span></div>
           {
-            currentStep === 'VerifyMail' ? <>
-            <Formik
-            initialValues= {{
-              email: '',
-            }}
-            onSubmit= {(values) => {
-              setCurrentStep('loading')             
-                    var config = {
-                        method: 'post',
-                        url: '/auth/register/'+currentStep,
-                        headers: { 
-                          'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        data :JSON.stringify({
-                            "email": values.email,
-                          })
-                      };
-                    axios(config)
-                        .then(res  => {
-                          console.log(res);
-                          if (res.status === 200){
-                            if(res.data.sentOTP === true){
-                              setUserEmail(res.data.travelto)
-                              setCurrentStep('verify2FaCode')
-                            }else{
-                              setregistrationErrorDialogIsOpen(true)
-                              setregistrationError('Please refresh the page and try again.')
-                              setCurrentStep('VerifyMail')
-                            }
-                          }
-                        })
-                        .catch(error => {
-                            if (error) {
-                              setCurrentStep('VerifyMail')
-                            }
-                        })
-            }}
-            validationSchema={Yup.object({
-              email: Yup.string().email('Invalid Email').required('Required'),
-            })}
-            >
-              {({ errors, touched, isValidating }) => (
-                <>
-                <div className='text-md mb-4 text-gray-400'>Please enter your email to begin the process.</div>
-                <Form className="bg-white shadow-2xl gap-3 shadow-gray-200 flex flex-col p-8 px-6 border rounded-lg min-w-sm max-w-sm">
+            OTPsent === false ? <>
+            <div className='text-md mb-4 text-gray-400'>Please enter your email to begin the process.</div>
+                <form className="bg-white shadow-2xl gap-3 shadow-gray-200 flex flex-col p-8 px-6 border rounded-lg min-w-sm max-w-sm">
                   <div className='flex flex-col group relative'>
-                      {errors.email && touched.email && <div className='bg-red-200 absolute right-2 bottom-2 text-red-500 shadow-lg shadow-red-100 w-[fit-content] px-1 rounded-md text-sm'>{errors.email}</div>}
+                      {userEmailError  ? <div className='bg-red-200 absolute right-2 bottom-2 text-red-500 shadow-lg shadow-red-100 w-[fit-content] px-1 rounded-md text-sm'>{userEmailError}</div> : <></>}
                       <label htmlFor="identity" className='text-gray-500 text-sm group-focus-within:text-gray-800 transition-all'><MdAlternateEmail className='inline'/> Email Address</label>
-                      <Field type="email" placeholder='email@example.com' className='border focus-within:outline-0 focus-within:shadow-md shadow-gray-100 px-3 h-9 rounded-lg' name="email" />
+                      <input value={userEmail} onChange={(e)=>{setUserEmail(e.target.value)}} type="email" placeholder='email@example.com' className='border focus-within:outline-0 focus-within:shadow-md shadow-gray-100 px-3 h-9 rounded-lg' name="email" />
                   </div>
-                  <button type="submit" className='bg-pink-500 w-full shadow-lg flex flex-row items-center gap-2 justify-center shadow-pink-300 text-white rounded-lg p-2 active:shadow transition-all group' >
+                  <div>
+                  <button type="button" onClick={(e)=>{sendOTP()}} className='bg-pink-500 w-full shadow-lg flex flex-row items-center gap-2 justify-center shadow-pink-300 text-white rounded-lg p-2 active:shadow transition-all group' >
                     <span className='duration-200 group-hover:pl-2'>Get Started</span><FiArrowRight className='duration-200 group-hover:ml-2 group-active:ml-10 group-active:opacity-0'/></button>            
-                </Form>
-                <div className='text-sm my-4 text-gray-400 text-center'><FcInfo className='inline text-lg'/> A <b>code</b> will be sent your email, for verification.</div>
-                </>
-              )}  
-            </Formik>
-            </> :
-            currentStep === 'verify2FaCode' ? <> 
-            <Formik
-            initialValues= {{
-              verificationcode: '',
-            }}
-            onSubmit= {(values) => {
-                    setCurrentStep('loading')
-                    var config = {
-                        method: 'post',
-                        url: '/auth/register/'+currentStep,
-                        headers: { 
-                          'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        data :JSON.stringify({
-                            "email": userEmail,
-                            "verificationcode":values.verificationcode
-                          })
-                      };
-                    axios(config)
-                        .then(res  => {
-                            if(res.status === 200){
-                              if(res.data.access_token){
-                                localStorage.setItem('token',res.data.access_token)
-                                setCurrentStep('done')
-                              }else{
-                                setregistrationErrorDialogIsOpen(true)
-                                setregistrationError('Please refresh the page and try again.')
-                                setCurrentStep('verify2FaCode')
-                              }
-                            }
-                        })
-                        .catch(error => {
-                            if (error) {
-                              console.log(error);
-                              setCurrentStep('verify2FaCode')
-                            }
-                        })
-            }}
-            validationSchema={Yup.object({
-              verificationcode: Yup.number().positive().integer('Must be Numerical').required('Required').max(999999,'Code Invalid').min(100000,'Code Invalid'),
-            })}
-            >
-              {({ errors, touched, isValidating }) => (
-                <>
-                <div className='text-md mb-4 text-gray-400'>Please enter the verification code to finish the process.</div>
-                <Form className="bg-white shadow-2xl gap-3 shadow-gray-200 flex flex-col p-8 px-6 border rounded-lg min-w-sm max-w-sm">
-                  <div className='flex flex-col group relative'>
-                      {errors.verificationcode && touched.verificationcode && <div className='bg-red-200 absolute right-2 bottom-2 text-red-500 shadow-lg shadow-red-100 w-[fit-content] px-1 rounded-md text-sm'>{errors.verificationcode}</div>}
-                      <label htmlFor="identity" className='text-gray-500 text-sm group-focus-within:text-gray-800 transition-all'><CgPassword className='inline'/> Verification Code</label>
-                      <Field type="number" placeholder='000 000' className='border focus-within:outline-0 focus-within:shadow-md shadow-gray-100 px-3 h-9 rounded-lg' name="verificationcode" />
                   </div>
-                  <button type="submit" className='bg-pink-500 w-full shadow-lg flex flex-row items-center gap-2 justify-center shadow-pink-300 text-white rounded-lg p-2 active:shadow transition-all group' >
+                  </form>
+                <div className='text-sm my-4 text-gray-400 text-center'><FcInfo className='inline text-lg'/> A <b>code</b> will be sent your email, for verification.</div>
+                
+            </> :
+            OTPsent === true ? <> 
+            <div className='text-md mb-4 text-gray-400'>Please enter the verification code to finish the process.</div>
+                <form className="bg-white shadow-2xl gap-3 shadow-gray-200 flex flex-col p-8 px-6 border rounded-lg min-w-sm max-w-sm">
+                  <div className='flex flex-col group relative'>
+                      {userOTPError ? <div className='bg-red-200 absolute right-2 bottom-2 text-red-500 shadow-lg shadow-red-100 w-[fit-content] px-1 rounded-md text-sm'>{userOTPError}</div> : <></>}
+                      <label htmlFor="identity" className='text-gray-500 text-sm group-focus-within:text-gray-800 transition-all'><CgPassword className='inline'/> Verification Code</label>
+                      <input value={userOTP} onChange={(e)=>{setUserOTP(e.target.value)}} type="number" placeholder='000 000' className='border focus-within:outline-0 focus-within:shadow-md shadow-gray-100 px-3 h-9 rounded-lg' name="verificationcode" />
+                  </div>
+                  <div>
+                  <button type="button" onClick={(e)=>{verifyOTP()}} className='bg-pink-500 w-full shadow-lg flex flex-row items-center gap-2 justify-center shadow-pink-300 text-white rounded-lg p-2 active:shadow transition-all group' >
                     <span className='duration-200 group-hover:pl-2'>Next</span><FiArrowRight className='duration-200 group-hover:ml-2 group-active:ml-10 group-active:opacity-0'/></button>            
-                </Form>
-                </>
-              )}  
-            </Formik>
+                  </div>
+                 </form>
             </>
-            : currentStep === 'loading' ? <>
-              <div className="relative h-40 w-full">
-                  <svg className="spinner" viewBox="0 0 50 50">
-                    <circle className="path stroke-orange-400" cx="25" cy="25" r="20" fill="none" strokeWidth="5"></circle>
-                  </svg>
-              </div>
-            </> : <>Something Went wrong, Please try refreshing the page.</>
+            : <>Something Went wrong, Please try refreshing the page.</>
           }
           <hr className='mt-4 mb-2 mx-8' />
           <div className='text-sm mb-2 text-gray-400 text-center'>Already have a account? Login now.</div>

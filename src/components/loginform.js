@@ -2,7 +2,7 @@ import  Link from 'next/link';
 import {MdAlternateEmail,MdPassword} from "react-icons/md"
 import {AiOutlineLogin} from "react-icons/ai"
 import {FiSend, FiUserPlus} from "react-icons/fi"
-import { useState,Fragment, useEffect } from 'react';
+import { useState,Fragment } from 'react';
 import axios from '../libs/axios';
 import { Dialog, Transition } from '@headlessui/react'
 import { CgPassword } from 'react-icons/cg';
@@ -30,7 +30,6 @@ function LoginForm() {
             },
             data :JSON.stringify({
                 "email": userEmail,
-                "loginVia": loginVia,
               })
           };
         axios(config)
@@ -108,13 +107,13 @@ function LoginForm() {
           };
         axios(config)
             .then(res  => {
-                if(res.data.access_token !== ''){
-                    localStorage.setItem('x-auth-token',res.data.access_token)
+                if(res.data.access_token){
+                    localStorage.setItem('token',res.data.access_token)
                     Router.push({
                         pathname:'/dashboard'
                     })
                 }
-                if(res.data.e !== ''){
+                if(res.data.e){
                     setloginErrorDialogIsOpen(true)
                     switch (res.data.e) {
                         case "404":
@@ -127,6 +126,8 @@ function LoginForm() {
                             setloginError('Unknow error, Please refresh the page and retry.')
                             break;
                     }
+                    setloginVia(null)
+                    setUserEmail('')
                 }
                 if(process.env.NEXT_PUBLIC_APPLICATION_STATUS === 'development'){
                     console.log(res.data);
@@ -142,10 +143,6 @@ function LoginForm() {
                 }
             })
     }
-
-    useEffect(()=>{
-        Router.prefetch('/register')
-    },[])
     return(
         <>
         <div className="p-10">
@@ -165,7 +162,7 @@ function LoginForm() {
                     <button type='button' onClick={(e) => {
                         firstStepForm('password')
                     }} className='bg-blue-500 shadow-lg w-full shadow-blue-300 text-white rounded-lg py-2 px-3 active:shadow transition-all flex flex-row items-center justify-center gap-2'><CgPassword/>Enter Password</button>
-                    <button onClick={(e) => {firstStepForm('otp')}} className='border w-full border-gray-300 hover:border-gray-400 duration-300 hover:shadow-md shadow-gray-100 rounded-lg py-2 px-3 active:shadow-lg transition-all flex flex-row items-center justify-center gap-2'><FiSend/>Send OTP</button>
+                    <button type='button' onClick={(e) => {firstStepForm('otp')}} className='border w-full border-gray-300 hover:border-gray-400 duration-300 hover:shadow-md shadow-gray-100 rounded-lg py-2 px-3 active:shadow-lg transition-all flex flex-row items-center justify-center gap-2'><FiSend/>Send OTP</button>
                 </div>
             </form>
               </> : loginVia === 'password' ? <>
@@ -175,8 +172,10 @@ function LoginForm() {
                         <label htmlFor="password" className='text-gray-500 text-sm group-focus-within:text-gray-800 transition-all'><MdPassword className='inline'/> Password for {userEmail}</label>
                         <input value={userPassword} onChange={(e)=>{setUserPassword(e.target.value)}} name="password" type="password" placeholder="******" className='border focus-within:outline-0 focus-within:shadow-md px-3 h-9 rounded-lg' />
                     </div>
-                    <button onClick={(e)=>{LastSubmit({action:'verifyPassword'})}} className='bg-pink-500 w-full shadow-lg flex flex-row items-center gap-2 justify-center shadow-pink-300 text-white rounded-lg p-2 active:shadow transition-all group' >
-                        <span className='duration-200 group-hover:pl-2'>Next</span><AiOutlineLogin className='duration-200 group-hover:ml-2 group-active:ml-10 group-active:opacity-0'/></button>     
+                    <div>
+                    <button type='button' onClick={(e)=>{LastSubmit({action:'verifyPassword'})}} className='bg-pink-500 w-full shadow-lg flex flex-row items-center gap-2 justify-center shadow-pink-300 text-white rounded-lg p-2 active:shadow transition-all group' >
+                        <span className='duration-200 group-hover:pl-2'>Next</span><AiOutlineLogin className='duration-200 group-hover:ml-2 group-active:ml-10 group-active:opacity-0'/></button>   
+                    </div>  
                 </form>
               </> : loginVia === 'otp' ? <>
                     <form className="bg-white shadow-2xl gap-3 shadow-gray-200 flex flex-col p-8 px-6 border rounded-lg min-w-sm max-w-sm">
@@ -186,8 +185,10 @@ function LoginForm() {
                                     <label htmlFor="identity" className='text-gray-500 text-sm group-focus-within:text-gray-800 transition-all'><CgPassword className='inline'/> Verification Code</label>
                                     <input value={userOTP} onChange={(e)=>{setUserOTP(e.target.value)}} type="number" placeholder='000 000' className='border focus-within:outline-0 focus-within:shadow-md shadow-gray-100 px-3 h-9 rounded-lg' name="verificationcode" />
                             </div>
-                            <button onClick={(e)=>{LastSubmit({action:'verifyOTP'})}} className='bg-pink-500 w-full shadow-lg flex flex-row items-center gap-2 justify-center shadow-pink-300 text-white rounded-lg p-2 active:shadow transition-all group' >
+                            <div>
+                            <button type='button' onClick={(e)=>{LastSubmit({action:'verifyOTP'})}} className='bg-pink-500 w-full shadow-lg flex flex-row items-center gap-2 justify-center shadow-pink-300 text-white rounded-lg p-2 active:shadow transition-all group' >
                                 <span className='duration-200 group-hover:pl-2'>Next</span><AiOutlineLogin className='duration-200 group-hover:ml-2 group-active:ml-10 group-active:opacity-0'/></button>  
+                            </div>
                         
                     </form>
               
