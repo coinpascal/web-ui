@@ -6,6 +6,7 @@ import axios from '../libs/axios';
 import { Dialog, Transition } from '@headlessui/react'
 import Link from "next/link";
 import { CgPassword } from "react-icons/cg";
+import { useAuth } from "../libs/auth";
 
 function CreateAccountForm() {
   const [registrationError, setregistrationError] = useState('')
@@ -15,7 +16,7 @@ function CreateAccountForm() {
   const [userOTP, setUserOTP] = useState('')
   const [userOTPError, setUserOTPError] = useState(null)
   const [OTPsent, setOTPsent] = useState(false)
-
+  const { afterLogin } = useAuth()
   const sendOTP = async () =>{
     if (userEmail === null || !String(userEmail).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/))
         {
@@ -98,7 +99,8 @@ const verifyOTP = async () =>{
   axios(config)
       .then(res  => {
           if(res.data.user === userEmail){
-            alert('UserCreated')
+            var token = res.data.token
+            afterLogin({token})
           }
           if(res.data.e){
             setregistrationErrorDialogIsOpen(true)

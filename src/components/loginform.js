@@ -9,7 +9,7 @@ import { CgPassword } from 'react-icons/cg';
 import { useAuth } from '../libs/auth';
 import Router from 'next/router';
 
-function LoginForm() {
+export const LoginForm = ({isVisible}) => {
     const user = useAuth({middleware: 'guest'})
     const [loginVia, setloginVia] = useState(null)
     const [userEmail, setUserEmail] = useState('')
@@ -18,6 +18,7 @@ function LoginForm() {
     const [userEmailError, setUserEmailError] = useState(null)
     const [userPasswordError, setUserPasswordError] = useState(null)
     const [userOTPError, setUserOTPError] = useState(null)
+    const [secretTosend, setsecretTosend] = useState('')
     const [loginError, setloginError] = useState('')
     const [loginErrorDialogisOpen, setloginErrorDialogIsOpen] = useState(false)
     
@@ -35,9 +36,9 @@ function LoginForm() {
         axios(config)
             .then(res  => {
                 if(res.data.sentOTP === true){
-                    setloginVia(loginVia)
+                    setloginVia('otp')
                 }
-                if(res.data.e !== ''){
+                if(res.data.e){
                     setloginErrorDialogIsOpen(true)
                     switch (res.data.e) {
                         case "404":
@@ -77,7 +78,6 @@ function LoginForm() {
 
         }else{setUserEmailError('Invalid Email')}
     }
-
     const LastSubmit = async ({action}) =>{
         if (action === 'verifyPassword'){
             if(userPassword === null){
@@ -85,6 +85,7 @@ function LoginForm() {
                 setUserPasswordError('Required')
                 return
             }
+            setsecretTosend(userPassword)
         }
         if (action === 'verifyOTP'){
             if(userOTP === null){
@@ -92,8 +93,8 @@ function LoginForm() {
                 setUserOTPError('Required')
                 return
             }
+            setsecretTosend(userOTP)
         }
-
         var config = {
             method: 'post',
             url: '/auth/'+action,
@@ -102,7 +103,7 @@ function LoginForm() {
             },
             data :JSON.stringify({
                 "email": userEmail,
-                "secret": userPassword,
+                "secret": secretTosend,
               })
           };
         axios(config)
@@ -118,16 +119,21 @@ function LoginForm() {
                     switch (res.data.e) {
                         case "404":
                             setloginError('Invalid Credentials, Please check your Username/Password')
+                            setloginVia(null)
+                            setUserEmail('')
+                            break
+                        case "221":
+                            setloginError('Password Incorrect, Retry.')
+                            setUserPassword('')
                             break
                         case "500":
                             setloginError('Invalid Email Format, Re-enter your email.')
+                            setloginVia(null)
                             break;
                         default:
                             setloginError('Unknow error, Please refresh the page and retry.')
                             break;
                     }
-                    setloginVia(null)
-                    setUserEmail('')
                 }
                 if(process.env.NEXT_PUBLIC_APPLICATION_STATUS === 'development'){
                     console.log(res.data);
@@ -275,5 +281,3 @@ function LoginForm() {
         </>
     )
 }
-
-export default LoginForm
