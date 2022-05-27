@@ -1,9 +1,13 @@
-import { useAuth } from "../libs/auth";
+import { useSession, signOut} from 'next-auth/react';
+import useAuth from '../hooks/useAuth'
 function DashboardPage() {
-    const { user } = useAuth({ middleware: 'auth' })
-
+    const { data: session } = useSession()
+    const isAuthenticated = useAuth(true);
+    if(isAuthenticated){
+        console.log(session);
+    }
     return(
-        <>Dashboard Index</>
+        <>Dashboard Index {session.user.name} <button onClick={()=>{signOut()}}>Signout</button></>
     )
 }
 

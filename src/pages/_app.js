@@ -1,13 +1,20 @@
 import '../index.css'
 import { ThemeProvider } from 'next-themes'
+import { SessionProvider } from 'next-auth/react';
+import { useState } from 'react';
+import RefreshTokenHandler from '../components/refreshTokenHandler';
 
-const App = ({ Component, pageProps }) => {
+function MyApp({ Component, pageProps }) {
+    const [interval, setInterval] = useState(0);
 
-   return(
-    <ThemeProvider attribute="class">
-        <Component {...pageProps} />
-    </ThemeProvider>
-   )
+    return (
+        <SessionProvider session={pageProps.session} refetchInterval={interval}>
+            <ThemeProvider attribute="class">
+            <Component {...pageProps} />
+            </ThemeProvider>
+            <RefreshTokenHandler setInterval={setInterval} />
+        </SessionProvider>
+    )
 }
 
-export default App
+export default MyApp;
