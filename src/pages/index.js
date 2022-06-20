@@ -1,12 +1,15 @@
+import CsPageLayout from '../components/layouts/csPage'
 import FrontPageLayout from '../components/layouts/frontPage'
-import { useAuth } from '../libs/auth'
 export default function HomePage() {
-  const user = useAuth({middleware:'guest'})
     return(
         <>
+        { process.env.NEXT_PUBLIC_SHOWCSPAGE === '1'  ? <>
+        <CsPageLayout></CsPageLayout>
+        </> : <>
         <FrontPageLayout>
           Home Page    
         </FrontPageLayout>
+        </>}
         </>
     )
 }
